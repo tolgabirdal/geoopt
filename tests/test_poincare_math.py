@@ -153,20 +153,20 @@ def test_scalar_multiplication_distributive(a, r, d1, d2):
     np.testing.assert_allclose(res2, res, **tolerance[r.dtype])
 
 
-def test_scalar_multiplication_associative(a, c, r1, r2):
-    res = poincare.math.mobius_scalar_mul(r1 * r2, a, c=c)
+def test_scalar_multiplication_associative(a, r, d1, d2):
+    res = poincare.math.mobius_scalar_mul(d1 * d2, a, r=r)
     res1 = poincare.math.mobius_scalar_mul(
-        r1, poincare.math.mobius_scalar_mul(r2, a, c=c), c=c
+        d1, poincare.math.mobius_scalar_mul(d2, a, r=r), r=r
     )
     res2 = poincare.math.mobius_scalar_mul(
-        r2, poincare.math.mobius_scalar_mul(r1, a, c=c), c=c
+        d2, poincare.math.mobius_scalar_mul(d1, a, r=r), r=r
     )
     tolerance = {
         torch.float32: dict(atol=1e-7, rtol=1e-7),
         torch.float64: dict(atol=1e-7, rtol=1e-10),
     }
-    np.testing.assert_allclose(res1, res, **tolerance[c.dtype])
-    np.testing.assert_allclose(res2, res, **tolerance[c.dtype])
+    np.testing.assert_allclose(res1, res, **tolerance[r.dtype])
+    np.testing.assert_allclose(res2, res, **tolerance[r.dtype])
 
 
 def test_scaling_property(a, c, r1):
