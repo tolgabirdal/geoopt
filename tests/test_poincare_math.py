@@ -169,17 +169,17 @@ def test_scalar_multiplication_associative(a, r, d1, d2):
     np.testing.assert_allclose(res2, res, **tolerance[r.dtype])
 
 
-def test_scaling_property(a, c, r1):
+def test_scaling_property(a, r, d1):
     x1 = a / a.norm(dim=-1, keepdim=True)
-    ra = poincare.math.mobius_scalar_mul(r1, a, c=c)
-    x2 = poincare.math.mobius_scalar_mul(abs(r1), a, c=c) / ra.norm(
+    ra = poincare.math.mobius_scalar_mul(d1, a, r=r)
+    x2 = poincare.math.mobius_scalar_mul(abs(d1), a, r=r) / ra.norm(
         dim=-1, keepdim=True
     )
     tolerance = {
         torch.float32: dict(rtol=1e-5, atol=1e-6),
         torch.float64: dict(atol=1e-10),
     }
-    np.testing.assert_allclose(x1, x2, **tolerance[c.dtype])
+    np.testing.assert_allclose(x1, x2, **tolerance[r.dtype])
 
 
 def test_geodesic_borders(a, b, c):
