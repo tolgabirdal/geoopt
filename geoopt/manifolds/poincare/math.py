@@ -51,7 +51,7 @@ def arsinh(x):
     return Arsinh.apply(x)
 
 
-def project(x, *, c=1.0, dim=-1):
+def project(x, *, r=1.0, dim=-1):
     r"""
     Safe projection on the manifold for numerical stability.
 
@@ -59,8 +59,8 @@ def project(x, *, c=1.0, dim=-1):
     ----------
     x : tensor
         point on the Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension to compute norm
 
@@ -69,7 +69,7 @@ def project(x, *, c=1.0, dim=-1):
     tensor
         projected vector on the manifold
     """
-    return _project(x, c, dim)
+    return _project(x, r, dim)
 
 
 @torch.jit.script
@@ -81,28 +81,28 @@ def _max_norm(x):
     return maxnorm
 
 
-def _project(x, c, dim: int = -1):
+def _project(x, r, dim: int = -1):
     norm = x.norm(dim=dim, keepdim=True, p=2)
-    maxnorm = _max_norm(x) / (c ** 0.5)
+    maxnorm = _max_norm(x) * r
     cond = norm > maxnorm
     projected = x / norm * maxnorm
     return torch.where(cond, projected, x)
 
 
-def lambda_x(x, *, c=1.0, keepdim=False, dim=-1):
+def lambda_x(x, *, r=1.0, keepdim=False, dim=-1):
     r"""
-    Compute the conformal factor :math:`\lambda^c_x` for a point on the ball
+    Compute the conformal factor :math:`\lambda^r_x` for a point on the ball
 
     .. math::
 
-        \lambda^c_x = \frac{1}{1 - c \|x\|_2^2}
+        \lambda^r_x = \frac{1}{1 - \tfrac{1}{r^2} \|x\|_2^2}
 
     Parameters
     ----------
     x : tensor
         point on the Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     keepdim : bool
         retain the last dim? (default: false)
     dim : int
@@ -113,20 +113,20 @@ def lambda_x(x, *, c=1.0, keepdim=False, dim=-1):
     tensor
         conformal factor
     """
-    return _lambda_x(x, c, keepdim=keepdim, dim=dim)
+    return _lambda_x(x, r, keepdim=keepdim, dim=dim)
 
 
-def _lambda_x(x, c, keepdim: bool = False, dim: int = -1):
-    return 2 / (1 - c * x.pow(2).sum(dim=dim, keepdim=keepdim))
+def _lambda_x(x, r, keepdim: bool = False, dim: int = -1):
+    return 2 / (1 - (x / r).pow(2).sum(dim=dim, keepdim=keepdim))
 
 
-def inner(x, u, v, *, c=1.0, keepdim=False, dim=-1):
+def inner(x, u, v, *, r=1.0, keepdim=False, dim=-1):
     r"""
     Compute inner product for two vectors on the tangent space w.r.t Riemannian metric on the Poincare ball
 
     .. math::
 
-        \langle u, v\rangle_x = (\lambda^c_x)^2 \langle u, v \rangle
+        \langle u, v\rangle_x = (\lambda^r_x)^2 \langle u, v \rangle
 
     Parameters
     ----------
@@ -136,8 +136,8 @@ def inner(x, u, v, *, c=1.0, keepdim=False, dim=-1):
         tangent vector to :math:`x` on Poincare ball
     v : tensor
         tangent vector to :math:`x` on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     keepdim : bool
         retain the last dim? (default: false)
     dim : int
@@ -148,22 +148,22 @@ def inner(x, u, v, *, c=1.0, keepdim=False, dim=-1):
     tensor
         inner product
     """
-    return _inner(x, u, v, c, keepdim=keepdim, dim=dim)
+    return _inner(x, u, v, r, keepdim=keepdim, dim=dim)
 
 
-def _inner(x, u, v, c, keepdim: bool = False, dim: int = -1):
-    return _lambda_x(x, c, keepdim=True, dim=dim) ** 2 * (u * v).sum(
+def _inner(x, u, v, r, keepdim: bool = False, dim: int = -1):
+    return _lambda_x(x, r, keepdim=True, dim=dim) ** 2 * (u * v).sum(
         dim=dim, keepdim=keepdim
     )
 
 
-def norm(x, u, *, c=1.0, keepdim=False, dim=-1):
+def norm(x, u, *, r=1.0, keepdim=False, dim=-1):
     r"""
     Compute vector norm on the tangent space w.r.t Riemannian metric on the Poincare ball
 
     .. math::
 
-        \|u\|_x = \lambda^c_x \|u\|_2
+        \|u\|_x = \lambda^r_x \|u\|_2
 
     Parameters
     ----------
@@ -183,25 +183,25 @@ def norm(x, u, *, c=1.0, keepdim=False, dim=-1):
     tensor
         norm of vector
     """
-    return _norm(x, u, c, keepdim=keepdim, dim=dim)
+    return _norm(x, u, r, keepdim=keepdim, dim=dim)
 
 
-def _norm(x, u, c, keepdim: bool = False, dim: int = -1):
-    return _lambda_x(x, c, keepdim=keepdim, dim=dim) * u.norm(
+def _norm(x, u, r, keepdim: bool = False, dim: int = -1):
+    return _lambda_x(x, r, keepdim=keepdim, dim=dim) * u.norm(
         dim=dim, keepdim=keepdim, p=2
     )
 
 
-def mobius_add(x, y, *, c=1.0, dim=-1):
+def mobius_add(x, y, *, r=1.0, dim=-1):
     r"""
     Mobius addition is a special operation in a hyperbolic space.
 
     .. math::
 
-        x \oplus_c y = \frac{
-            (1 + 2 c \langle x, y\rangle + c \|y\|^2_2) x + (1 - c \|x\|_2^2) y
+        x \oplus_r y = \frac{
+            (1 + 2 \tfrac{1}{r^2} \langle x, y\rangle + \tfrac{1}{r^2} \|y\|^2_2) x + (1 - \tfrac{1}{r^2} \|x\|_2^2) y
             }{
-            1 + 2 c \langle x, y\rangle + c^2 \|x\|^2_2 \|y\|^2_2
+            1 + 2 \tfrac{1}{r^2} \langle x, y\rangle + \tfrac{1}{r^4} \|x\|^2_2 \|y\|^2_2
         }
 
     .. plot:: plots/extended/poincare/mobius_add.py
@@ -210,7 +210,7 @@ def mobius_add(x, y, *, c=1.0, dim=-1):
 
     .. math::
 
-        x \oplus_c y \ne y \oplus_c x
+        x \oplus_r y \ne y \oplus_r x
 
     But in some cases this property holds:
 
@@ -218,19 +218,19 @@ def mobius_add(x, y, *, c=1.0, dim=-1):
 
     .. math::
 
-        \mathbf{0} \oplus_c x = x \oplus_c \mathbf{0}
+        \mathbf{0} \oplus_r x = x \oplus_r \mathbf{0}
 
     * zero negative curvature case that is same as Euclidean addition
 
     .. math::
 
-        x \oplus_0 y = y \oplus_0 x
+        x \oplus_\infty y = y \oplus_\infty x
 
     Another useful property is so called left-cancellation law:
 
     .. math::
 
-        (-x) \oplus_c (x \oplus_c y) = y
+        (-x) \oplus_r (x \oplus_r y) = y
 
     Parameters
     ----------
@@ -238,7 +238,7 @@ def mobius_add(x, y, *, c=1.0, dim=-1):
         point on the Poincare ball
     y : tensor
         point on the Poincare ball
-    c : float|tensor
+    r : float|tensor
         ball negative curvature
     dim : int
         reduction dimension for operations
@@ -248,27 +248,29 @@ def mobius_add(x, y, *, c=1.0, dim=-1):
     tensor
         the result of mobius addition
     """
-    return _mobius_add(x, y, c, dim=dim)
+    return _mobius_add(x, y, r, dim=dim)
 
 
-def _mobius_add(x, y, c, dim=-1):
-    y = y + 1e-15
-    x2 = x.pow(2).sum(dim=dim, keepdim=True)
-    y2 = y.pow(2).sum(dim=dim, keepdim=True)
-    xy = (x * y).sum(dim=dim, keepdim=True)
-    num = (1 + 2 * c * xy + c * y2) * x + (1 - c * x2) * y
-    denom = 1 + 2 * c * xy + c ** 2 * x2 * y2
+def _mobius_add(x, y, r, dim=-1):
+    y = (y + 1e-15)
+    rx = (x / r)
+    ry = (y / r)
+    rx2 = rx.pow(2).sum(dim=dim, keepdim=True)
+    ry2 = ry.pow(2).sum(dim=dim, keepdim=True)
+    rxy = (rx * ry).sum(dim=dim, keepdim=True)
+    num = (1 + 2 * rxy + ry2) * x + (1 - rx2) * y
+    denom = 1 + 2 * rxy + rx2 * ry2
     # avoid division by zero in this way
     return num / (denom + 1e-15)
 
 
-def mobius_sub(x, y, *, c=1.0, dim=-1):
+def mobius_sub(x, y, *, r=1.0, dim=-1):
     r"""
     Mobius substraction that can be represented via Mobius addition as follows:
 
     .. math::
 
-        x \ominus_c y = x \oplus_c (-y)
+        x \ominus_r y = x \oplus_r (-y)
 
     Parameters
     ----------
@@ -276,8 +278,8 @@ def mobius_sub(x, y, *, c=1.0, dim=-1):
         point on Poincare ball
     y : tensor
         point on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -286,11 +288,11 @@ def mobius_sub(x, y, *, c=1.0, dim=-1):
     tensor
         the result of mobius substraction
     """
-    return _mobius_sub(x, y, c, dim=dim)
+    return _mobius_sub(x, y, r, dim=dim)
 
 
-def _mobius_sub(x, y, c, dim: int = -1):
-    return _mobius_add(x, -y, c, dim=dim)
+def _mobius_sub(x, y, r, dim: int = -1):
+    return _mobius_add(x, -y, r, dim=dim)
 
 
 def mobius_coadd(x, y, *, c=1.0, dim=-1):
@@ -1316,13 +1318,13 @@ def _parallel_transport0(y, v, c, dim: int = -1):
     return v * (1 - c * y.pow(2).sum(dim=dim, keepdim=True))
 
 
-def egrad2rgrad(x, grad, *, c=1.0, dim=-1):
+def egrad2rgrad(x, grad, *, r=1.0, dim=-1):
     r"""
     Translate Euclidean gradient to Riemannian gradient on tangent space of :math:`x`
 
     .. math::
 
-        \nabla_x = \nabla^E_x / (\lambda_x^c)^2
+        \nabla_x = \nabla^E_x / (\lambda_x^r)^2
 
     Parameters
     ----------
@@ -1330,18 +1332,18 @@ def egrad2rgrad(x, grad, *, c=1.0, dim=-1):
         point on the Poincare ball
     grad : tensor
         Euclidean gradient for :math:`x`
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
     Returns
     -------
     tensor
-        Riemannian gradient :math:`u\in T_x\mathbb{D}_c^n`
+        Riemannian gradient :math:`u\in T_x\mathbb{D}_r^n`
     """
-    return _egrad2rgrad(x, grad, c, dim=dim)
+    return _egrad2rgrad(x, grad, r, dim=dim)
 
 
-def _egrad2rgrad(x, grad, c, dim: int = -1):
-    return grad / _lambda_x(x, c, keepdim=True, dim=dim) ** 2
+def _egrad2rgrad(x, grad, r, dim: int = -1):
+    return grad / _lambda_x(x, r, keepdim=True, dim=dim) ** 2

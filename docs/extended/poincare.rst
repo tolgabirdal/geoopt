@@ -46,18 +46,18 @@ Poincare Model
 
 Here we go.
 
-First of all we note, that Poincare ball is embedded in a Sphere of radius :math:`r=1/\sqrt{c}`,
-where c is negative curvature. We also note, as :math:`c` goes to `0`, we recover infinite radius ball.
+First of all we note, that Poincare ball :math:`\mathfrak{B}_r` is embedded hyperbolic space :math:`\mathbb{H_c}` in a Sphere of radius :math:`r`,
+where :math:`c=-\tfrac{1}{r^2}` is curvature in :math:`\mathbb{H_c}`. We also note, as :math:`r` goes to :math:`\infty`, we recover infinite radius ball and zero curvature :math:`c`.
 We should expect this limiting behaviour recovers Euclidean geometry.
 
 To connect euclidean space with its embedded manifold we need to get :math:`g_x`.
-It is done via `conformal factor` :math:`\lambda^c_x`.
+It is done via `conformal factor` :math:`\lambda^r_x`.
 
 
 .. autofunction:: geoopt.manifolds.poincare.math.lambda_x
 
 
-:math:`\lambda^c_x` connects euclidean inner product with Riemannian one
+:math:`\lambda^r_x` connects euclidean inner product with Riemannian one
 
 .. autofunction:: geoopt.manifolds.poincare.math.inner
 .. autofunction:: geoopt.manifolds.poincare.math.norm
