@@ -704,13 +704,13 @@ def _expmap0(u, r, dim: int = -1):
     return gamma_1
 
 
-def geodesic_unit(t, x, u, *, c=1.0, dim=-1):
+def geodesic_unit(t, x, u, *, r=1.0, dim=-1):
     r"""
     Unit speed geodesic starting from :math:`x` with direction :math:`u/\|u\|_x`
 
     .. math::
 
-        \gamma_{x,u}(t) = x\oplus_c \tanh(t\sqrt{c}/2) \frac{u}{\sqrt{c}\|u\|_2}
+        \gamma_{x,u}(t) = x\oplus_r \tanh(t/(2r)) \frac{u}{\|u\|_2/r}
 
     Parameters
     ----------
@@ -720,8 +720,8 @@ def geodesic_unit(t, x, u, *, c=1.0, dim=-1):
         initial point
     u : tensor
         direction
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -730,14 +730,13 @@ def geodesic_unit(t, x, u, *, c=1.0, dim=-1):
     tensor
         the point on geodesic line
     """
-    return _geodesic_unit(t, x, u, c, dim=dim)
+    return _geodesic_unit(t, x, u, r, dim=dim)
 
 
-def _geodesic_unit(t, x, u, c, dim: int = -1):
-    sqrt_c = c ** 0.5
+def _geodesic_unit(t, x, u, r, dim: int = -1):
     u_norm = u.norm(dim=dim, p=2, keepdim=True)
-    second_term = tanh(sqrt_c / 2 * t) * u / (sqrt_c * u_norm)
-    gamma_1 = _mobius_add(x, second_term, c, dim=dim)
+    second_term = tanh(t / r / 2) * u / (u_norm / r)
+    gamma_1 = _mobius_add(x, second_term, r, dim=dim)
     return gamma_1
 
 
