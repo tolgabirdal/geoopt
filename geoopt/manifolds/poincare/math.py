@@ -740,21 +740,21 @@ def _geodesic_unit(t, x, u, r, dim: int = -1):
     return gamma_1
 
 
-def logmap(x, y, *, c=1.0, dim=-1):
+def logmap(x, y, *, r=1.0, dim=-1):
     r"""
     Logarithmic map for two points :math:`x` and :math:`y` on the manifold.
 
     .. math::
 
-        \operatorname{Log}^c_x(y) = \frac{2}{\sqrt{c}\lambda_x^c} \tanh^{-1}(
-            \sqrt{c} \|(-x)\oplus_c y\|_2
-        ) * \frac{(-x)\oplus_c y}{\|(-x)\oplus_c y\|_2}
+        \operatorname{Log}^r_x(y) = \frac{2r}{\lambda_x^r} \tanh^{-1}(
+            \|(-x)\oplus_r y\|_2/r
+        ) * \frac{(-x)\oplus_r y}{\|(-x)\oplus_r y\|_2}
 
     The result of Logarithmic map is a vector such that
 
     .. math::
 
-        y = \operatorname{Exp}^c_x(\operatorname{Log}^c_x(y))
+        y = \operatorname{Exp}^r_x(\operatorname{Log}^r_x(y))
 
 
     Parameters
@@ -763,8 +763,8 @@ def logmap(x, y, *, c=1.0, dim=-1):
         starting point on Poincare ball
     y : tensor
         target point on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -773,38 +773,37 @@ def logmap(x, y, *, c=1.0, dim=-1):
     tensor
         tangent vector that transports :math:`x` to :math:`y`
     """
-    return _logmap(x, y, c, dim=dim)
+    return _logmap(x, y, r, dim=dim)
 
 
-def _logmap(x, y, c, dim: int = -1):
-    sub = _mobius_add(-x, y, c, dim=dim)
-    sub_norm = sub.norm(dim=dim, p=2, keepdim=True)
-    lam = _lambda_x(x, c, keepdim=True, dim=dim)
-    sqrt_c = c ** 0.5
-    return 2 / sqrt_c / lam * artanh(sqrt_c * sub_norm) * sub / sub_norm
+def _logmap(x, y, r, dim: int = -1):
+    sub = _mobius_add(-x, y, r, dim=dim)
+    sub_norm_div_r = sub.norm(dim=dim, p=2, keepdim=True) / r
+    lam = _lambda_x(x, r, keepdim=True, dim=dim)
+    return 2 / lam * artanh(sub_norm_div_r) * sub / sub_norm_div_r
 
 
-def logmap0(y, *, c=1.0, dim=-1):
+def logmap0(y, *, r=1.0, dim=-1):
     r"""
     Logarithmic map for :math:`y` from :math:`0` on the manifold.
 
 
     .. math::
 
-        \operatorname{Log}^c_0(y) = \tanh^{-1}(\sqrt{c}\|y\|_2) \frac{y}{\|y\|_2}
+        \operatorname{Log}^r_0(y) = \tanh^{-1}(\|y\|_2/r) \frac{y}{\|y\|_2}
 
     The result is such that
 
     .. math::
 
-        y = \operatorname{Exp}^c_0(\operatorname{Log}^c_0(y))
+        y = \operatorname{Exp}^r_0(\operatorname{Log}^r_0(y))
 
     Parameters
     ----------
     y : tensor
         target point on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -813,14 +812,13 @@ def logmap0(y, *, c=1.0, dim=-1):
     tensor
         tangent vector that transports :math:`0` to :math:`y`
     """
-    return _logmap0(y, c, dim=dim)
+    return _logmap0(y, r, dim=dim)
 
 
-def _logmap0(y, c, dim: int = -1):
-    sqrt_c = c ** 0.5
+def _logmap0(y, r, dim: int = -1):
     y = y + 1e-15
-    y_norm = y.norm(dim=dim, p=2, keepdim=True)
-    return y / y_norm / sqrt_c * artanh(sqrt_c * y_norm)
+    y_norm_div_r = y.norm(dim=dim, p=2, keepdim=True) / r
+    return y / y_norm_div_r * artanh(y_norm_div_r)
 
 
 def mobius_matvec(m, x, *, c=1.0, dim=-1):
