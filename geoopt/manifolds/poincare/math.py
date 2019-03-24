@@ -253,11 +253,10 @@ def mobius_add(x, y, *, r=1.0, dim=-1):
 
 def _mobius_add(x, y, r, dim=-1):
     y = (y + 1e-15)
-    rx = (x / r)
-    ry = (y / r)
-    rx2 = rx.pow(2).sum(dim=dim, keepdim=True)
-    ry2 = ry.pow(2).sum(dim=dim, keepdim=True)
-    rxy = (rx * ry).sum(dim=dim, keepdim=True)
+    r2 = r**2
+    rx2 = x.pow(2).sum(dim=dim, keepdim=True) / r2
+    ry2 = y.pow(2).sum(dim=dim, keepdim=True) / r2
+    rxy = (x * y).sum(dim=dim, keepdim=True) / r2
     num = (1 + 2 * rxy + ry2) * x + (1 - rx2) * y
     denom = 1 + 2 * rxy + rx2 * ry2
     # avoid division by zero in this way

@@ -22,7 +22,7 @@ def dtype(request):
 
 
 @pytest.fixture
-def c(seed, dtype):
+def r(seed, dtype):
     # test broadcasted and non broadcasted versions
     if seed == 30:
         c = torch.tensor(0.0).to(dtype)
@@ -32,45 +32,45 @@ def c(seed, dtype):
         c = torch.rand(100, 1, dtype=dtype)
     else:
         c = torch.tensor(random.random()).to(dtype)
-    return c + 1e-10
+    return 1 / (c + 1e-10) ** .5
 
 
 @pytest.fixture
-def a(seed, c):
+def a(seed, r):
     if seed in {30, 35}:
-        a = torch.randn(100, 10, dtype=c.dtype)
+        a = torch.randn(100, 10, dtype=r.dtype)
     elif seed > 35:
         # do not check numerically unstable regions
         # I've manually observed small differences there
-        a = torch.empty(100, 10, dtype=c.dtype).normal_(-1, 1)
+        a = torch.empty(100, 10, dtype=r.dtype).normal_(0, 1)
         a /= a.norm(dim=-1, keepdim=True) * 1.3
-        a *= (torch.rand_like(c) * c) ** 0.5
+        a *= torch.rand_like(r) * r
     else:
-        a = torch.empty(100, 10, dtype=c.dtype).normal_(-1, 1)
+        a = torch.empty(100, 10, dtype=r.dtype).normal_(0, 1)
         a /= a.norm(dim=-1, keepdim=True) * 1.3
-        a *= random.uniform(0, c) ** 0.5
-    return poincare.math.project(a, c=c)
+        a *= random.uniform(0, r)
+    return poincare.math.project(a, r=r)
 
 
 @pytest.fixture
-def b(seed, c):
+def b(seed, r):
     if seed in {30, 35}:
-        b = torch.randn(100, 10, dtype=c.dtype)
+        b = torch.randn(100, 10, dtype=r.dtype)
     elif seed > 35:
-        b = torch.empty(100, 10, dtype=c.dtype).normal_(-1, 1)
+        b = torch.empty(100, 10, dtype=r.dtype).normal_(0, 1)
         b /= b.norm(dim=-1, keepdim=True) * 1.3
-        b *= (torch.rand_like(c) * c) ** 0.5
+        b *= torch.rand_like(r) * r
     else:
-        b = torch.empty(100, 10, dtype=c.dtype).normal_(-1, 1)
+        b = torch.empty(100, 10, dtype=r.dtype).normal_(0, 1)
         b /= b.norm(dim=-1, keepdim=True) * 1.3
-        b *= random.uniform(0, c) ** 0.5
-    return poincare.math.project(b, c=c)
+        b *= random.uniform(0, r)
+    return poincare.math.project(b, r=r)
 
 
-def test_mobius_addition_left_cancelation(a, b, c):
-    res = poincare.math.mobius_add(-a, poincare.math.mobius_add(a, b, c=c), c=c)
+def test_mobius_addition_left_cancelation(a, b, r):
+    res = poincare.math.mobius_add(-a, poincare.math.mobius_add(a, b, r=r), r=r)
     tolerance = {torch.float32: dict(atol=1e-6, rtol=1e-6), torch.float64: dict()}
-    np.testing.assert_allclose(res, b, **tolerance[c.dtype])
+    np.testing.assert_allclose(res, b, **tolerance[r.dtype])
 
 
 def test_mobius_addition_zero_a(b, c):
