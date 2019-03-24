@@ -437,8 +437,8 @@ def mobius_scalar_mul(a, x, *, r=1.0, dim=-1):
 
 def _mobius_scalar_mul(a, x, r, dim: int = -1):
     x = x + 1e-15
-    x_norm = x.norm(dim=dim, keepdim=True, p=2)
-    res_c = tanh(a * artanh(x_norm / r)) * x / (x_norm / r)
+    x_norm_r = x.norm(dim=dim, keepdim=True, p=2) / r
+    res_c = tanh(a * artanh(x_norm_r)) * x / x_norm_r
     return res_c
 
 
