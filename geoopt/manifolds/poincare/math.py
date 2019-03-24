@@ -1222,7 +1222,7 @@ def _gyration(u, v, w, r, dim: int = -1):
     return w + 2 * (a * u + b * v) / (d + 1e-15)
 
 
-def parallel_transport(x, y, v, *, c=1.0, dim=-1):
+def parallel_transport(x, y, v, *, r=1.0, dim=-1):
     r"""
     Parallel transport is essential for adaptive algorithms in Riemannian manifolds.
     For Hyperbolic spaces parallel transport is expressed via gyration.
@@ -1236,23 +1236,24 @@ def parallel_transport(x, y, v, *, c=1.0, dim=-1):
 
         P_{x\to y}(z) = \operatorname{gyr}[y, -x]z,
 
-    where :math:`x,\:y,\:z \in \mathbb{D}_c^n` and
-    :math:`\operatorname{gyr}[a, b]c = \ominus (a \oplus b) \oplus (a \oplus (b \oplus c))`
+    where :math:`x,\:y,\:z \in \mathbb{B}_r^n` and
+    :math:`\operatorname{gyr}[a, b]c = \ominus_r (a \oplus_r b) \oplus_r (a \oplus_r (b \oplus_r c))`
 
     But we want to obtain parallel transport for vectors, not for gyrovectors.
     The blessing is isomorphism mentioned above. This mapping is given by
 
     .. math::
 
-        U^c_p \: : \: T_p\mathbb{D}_c^n \to \mathbb{G} = v \mapsto \lambda^c_p v
+        U^r_p \: : \: T_p\mathbb{B}_r^n \to \mathbb{G} = v \mapsto \lambda^r_p v
 
 
-    Finally, having points :math:`x,\:y \in \mathbb{D}_c^n` and a tangent vector :math:`u\in T_x\mathbb{D}_c^n` we obtain
+    Finally, having points :math:`x,\:y \in \mathbb{B}_r^n` and
+    a tangent vector :math:`u\in T_x\mathbb{B}_r^n` we obtain
 
     .. math::
 
-        P^c_{x\to y}(v) = (U^c_y)^{-1}\left(\operatorname{gyr}[y, -x] U^c_x(v)\right)\\
-        = \operatorname{gyr}[y, -x] v \lambda^c_x / \lambda^c_y
+        P^r_{x\to y}(v) = (U^r_y)^{-1}\left(\operatorname{gyr}[y, -x] U^r_x(v)\right)\\
+        = \operatorname{gyr}[y, -x] v \lambda^r_x / \lambda^r_y
 
     .. plot:: plots/extended/poincare/parallel_transport.py
 
@@ -1265,8 +1266,8 @@ def parallel_transport(x, y, v, *, c=1.0, dim=-1):
         end point
     v : tensor
         tangent vector to be transported
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -1275,18 +1276,18 @@ def parallel_transport(x, y, v, *, c=1.0, dim=-1):
     tensor
         transported vector
     """
-    return _parallel_transport(x, y, v, c, dim=dim)
+    return _parallel_transport(x, y, v, r, dim=dim)
 
 
-def _parallel_transport(x, y, u, c, dim: int = -1):
+def _parallel_transport(x, y, u, r, dim: int = -1):
     return (
-        _gyration(y, -x, u, c, dim=dim)
-        * _lambda_x(x, c, keepdim=True, dim=dim)
-        / _lambda_x(y, c, keepdim=True, dim=dim)
+        _gyration(y, -x, u, r, dim=dim)
+        * _lambda_x(x, r, keepdim=True, dim=dim)
+        / _lambda_x(y, r, keepdim=True, dim=dim)
     )
 
 
-def parallel_transport0(y, v, *, c=1.0, dim=-1):
+def parallel_transport0(y, v, *, r=1.0, dim=-1):
     r"""
     Special case parallel transport with starting point at zero that
     can be computed more efficiently and numerically stable
@@ -1297,8 +1298,8 @@ def parallel_transport0(y, v, *, c=1.0, dim=-1):
         target point
     v : tensor
         vector to be transported
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -1306,11 +1307,11 @@ def parallel_transport0(y, v, *, c=1.0, dim=-1):
     -------
     tensor
     """
-    return _parallel_transport0(y, v, c, dim=dim)
+    return _parallel_transport0(y, v, r, dim=dim)
 
 
-def _parallel_transport0(y, v, c, dim: int = -1):
-    return v * (1 - c * y.pow(2).sum(dim=dim, keepdim=True))
+def _parallel_transport0(y, v, r, dim: int = -1):
+    return v * (1 - (y / r).pow(2).sum(dim=dim, keepdim=True))
 
 
 def egrad2rgrad(x, grad, *, r=1.0, dim=-1):
