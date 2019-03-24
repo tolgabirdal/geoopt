@@ -79,9 +79,9 @@ def test_mobius_addition_zero_a(b, r):
     np.testing.assert_allclose(res, b)
 
 
-def test_mobius_addition_zero_b(a, c):
-    b = torch.zeros(100, 10, dtype=c.dtype)
-    res = poincare.math.mobius_add(a, b, c=c)
+def test_mobius_addition_zero_b(a, r):
+    b = torch.zeros(100, 10, dtype=r.dtype)
+    res = poincare.math.mobius_add(a, b, r=r)
     np.testing.assert_allclose(res, a)
 
 
