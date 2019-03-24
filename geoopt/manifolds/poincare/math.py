@@ -442,13 +442,13 @@ def _mobius_scalar_mul(a, x, r, dim: int = -1):
     return res_c
 
 
-def dist(x, y, *, c=1.0, keepdim=False, dim=-1):
+def dist(x, y, *, r=1.0, keepdim=False, dim=-1):
     r"""
     Distance on the Poincare ball
 
     .. math::
 
-        d_c(x, y) = \frac{2}{\sqrt{c}}\tanh^{-1}(\sqrt{c}\|(-x)\oplus_c y\|_2)
+        d_c(x, y) = 2r\tanh^{-1}(\|(-x)\oplus_c y\|_2/r)
 
     .. plot:: plots/extended/poincare/distance.py
 
@@ -458,8 +458,8 @@ def dist(x, y, *, c=1.0, keepdim=False, dim=-1):
         point on Poincare ball
     y : tensor
         point on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     keepdim : bool
         retain the last dim? (default: false)
     dim : int
@@ -470,18 +470,17 @@ def dist(x, y, *, c=1.0, keepdim=False, dim=-1):
     tensor
         geodesic distance between :math:`x` and :math:`y`
     """
-    return _dist(x, y, c, keepdim=keepdim, dim=dim)
+    return _dist(x, y, r, keepdim=keepdim, dim=dim)
 
 
-def _dist(x, y, c, keepdim: bool = False, dim: int = -1):
-    sqrt_c = c ** 0.5
-    dist_c = artanh(
-        sqrt_c * _mobius_add(-x, y, c, dim=dim).norm(dim=dim, p=2, keepdim=keepdim)
+def _dist(x, y, r, keepdim: bool = False, dim: int = -1):
+    dist_r = artanh(
+        _mobius_add(-x, y, r, dim=dim).norm(dim=dim, p=2, keepdim=keepdim) / r
     )
-    return dist_c * 2 / sqrt_c
+    return dist_r * 2 * r
 
 
-def dist0(x, *, c=1.0, keepdim=False, dim=-1):
+def dist0(x, *, r=1.0, keepdim=False, dim=-1):
     r"""
     Distance on the Poincare ball to zero
 
@@ -489,8 +488,8 @@ def dist0(x, *, c=1.0, keepdim=False, dim=-1):
     ----------
     x : tensor
         point on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     keepdim : bool
         retain the last dim? (default: false)
     dim : int
@@ -501,13 +500,12 @@ def dist0(x, *, c=1.0, keepdim=False, dim=-1):
     tensor
         geodesic distance between :math:`x` and :math:`0`
     """
-    return _dist0(x, c, keepdim=keepdim, dim=dim)
+    return _dist0(x, r, keepdim=keepdim, dim=dim)
 
 
-def _dist0(x, c, keepdim: bool = False, dim: int = -1):
-    sqrt_c = c ** 0.5
-    dist_c = artanh(sqrt_c * x.norm(dim=dim, p=2, keepdim=keepdim))
-    return dist_c * 2 / sqrt_c
+def _dist0(x, r, keepdim: bool = False, dim: int = -1):
+    dist_c = artanh(x.norm(dim=dim, p=2, keepdim=keepdim)/r)
+    return dist_c * 2 * r
 
 
 def clip_tangent(x, u, *, c=1.0, dim=-1):
