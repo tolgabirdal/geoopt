@@ -1149,30 +1149,30 @@ def _dist2plane(x, a, p, r, keepdim: bool = False, signed: bool = False, dim: in
     return r * arsinh(num / (denom + 1e-15))
 
 
-def gyration(a, b, u, *, c=1.0, dim=-1):
+def gyration(a, b, u, *, r=1.0, dim=-1):
     r"""
     Gyration is a special operation in hyperbolic geometry.
-    Addition operation :math:`\oplus` is not associative (as mentioned in :func:`mobius_add`),
+    Addition operation :math:`\oplus_r` is not associative (as mentioned in :func:`mobius_add`),
     but gyroassociative which means
 
     .. math::
 
-        u \oplus (v \oplus w) = (u\oplus v) \oplus \operatorname{gyr}[u, v]w,
+        u \oplus_r (v \oplus_r w) = (u\oplus_r v) \oplus \operatorname{gyr}[u, v]w,
 
     where
 
     .. math::
 
-        \operatorname{gyr}[u, v]w = \ominus (u \oplus v) \oplus (u \oplus (v \oplus w))
+        \operatorname{gyr}[u, v]w = \ominus_r (u \oplus_r v) \oplus_r (u \oplus_r (v \oplus_r w))
 
     We can simplify this equation using explicit formula for Mobius addition [1]. Recall
 
     .. math::
 
-        A = - c^2 \langle u, w\rangle \langle v, v\rangle + c \langle v, w\rangle +
-            2 c^2 \langle u, v\rangle \langle v, w\rangle\\
-        B = - c^2 \langle v, w\rangle \langle u, u\rangle - c \langle u, w\rangle\\
-        D = 1 + 2 c \langle u, v\rangle + c^2 \langle u, u\rangle \langle v, v\rangle\\
+        A = - \tfrac{1}{r^4} \langle u, w\rangle \langle v, v\rangle + \tfrac{1}{r^2} \langle v, w\rangle +
+            2 \tfrac{1}{r^4} \langle u, v\rangle \langle v, w\rangle\\
+        B = - \tfrac{1}{r^4} \langle v, w\rangle \langle u, u\rangle - \tfrac{1}{r^2} \langle u, w\rangle\\
+        D = 1 + 2 \tfrac{1}{r^2} \langle u, v\rangle + \tfrac{1}{r^4} \langle u, u\rangle \langle v, v\rangle\\
 
         \operatorname{gyr}[u, v]w = w + 2 \frac{A u + B v}{D}
 
@@ -1184,8 +1184,8 @@ def gyration(a, b, u, *, c=1.0, dim=-1):
         second point on Poincare ball
     u : tensor
         vector field for operation
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -1198,25 +1198,27 @@ def gyration(a, b, u, *, c=1.0, dim=-1):
     ----------
     [1]  A. A. Ungar (2009), A Gyrovector Space Approach to Hyperbolic Geometry
     """
-    return _gyration(a, b, u, c, dim=dim)
+    return _gyration(a, b, u, r, dim=dim)
 
 
-def _gyration(u, v, w, c, dim: int = -1):
+def _gyration(u, v, w, r, dim: int = -1):
     # non-simplified
-    # mupv = -_mobius_add(u, v, c)
-    # vpw = _mobius_add(u, w, c)
-    # upvpw = _mobius_add(u, vpw, c)
-    # return _mobius_add(mupv, upvpw, c)
+    # mupv = -_mobius_add(u, v, r)
+    # vpw = _mobius_add(u, w, r)
+    # upvpw = _mobius_add(u, vpw, r)
+    # return _mobius_add(mupv, upvpw, r)
     # simplified
-    u2 = u.pow(2).sum(dim=dim, keepdim=True)
-    v2 = v.pow(2).sum(dim=dim, keepdim=True)
-    uv = (u * v).sum(dim=dim, keepdim=True)
-    uw = (u * w).sum(dim=dim, keepdim=True)
-    vw = (v * w).sum(dim=dim, keepdim=True)
-    c2 = c ** 2
-    a = -c2 * uw * v2 + c * vw + 2 * c2 * uv * vw
-    b = -c2 * vw * u2 - c * uw
-    d = 1 + 2 * c * uv + c2 * u2 * v2
+    ru = u / r
+    rv = v / r
+    rw = w / r
+    ru_2 = ru.pow(2).sum(dim=dim, keepdim=True)
+    rv_2 = rv.pow(2).sum(dim=dim, keepdim=True)
+    ru_rv = (ru * rv).sum(dim=dim, keepdim=True)
+    rurw = (ru * rw).sum(dim=dim, keepdim=True)
+    rvrw = (rv * rw).sum(dim=dim, keepdim=True)
+    a = -rurw * rv_2 + rvrw + 2 * ru_rv * rvrw
+    b = -rvrw * ru_2 - rurw
+    d = 1 + 2 * ru_rv + ru_2 * rv_2
     return w + 2 * (a * u + b * v) / (d + 1e-15)
 
 
