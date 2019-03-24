@@ -512,14 +512,14 @@ def _dist0(x, r, keepdim: bool = False, dim: int = -1):
     return dist_c * 2 * r
 
 
-def clip_tangent(x, u, *, c=1.0, dim=-1):
+def clip_tangent(x, u, *, r=1.0, dim=-1):
     r"""
     Project tangent vector to reasonable values that do not exceed
     maximum allowed (vector norm allowing to travel to the opposite pole)
 
     .. math::
 
-        \operatorname{maxnorm}_x = d_{c}(\operatorname{proj}(-\infty), \operatorname{proj}(\infty)) / \lambda_x^c
+        \operatorname{maxnorm}_x = d_{r}(\operatorname{proj}(-\infty), \operatorname{proj}(\infty)) / \lambda_x^r
 
     Parameters
     ----------
@@ -527,8 +527,8 @@ def clip_tangent(x, u, *, c=1.0, dim=-1):
         point on Poincare ball
     u : tensor
         tangent vector
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension to compute norm
 
@@ -537,19 +537,18 @@ def clip_tangent(x, u, *, c=1.0, dim=-1):
     tensor
         same tangent vector with reasonable values
     """
-    return _clip_tangent(x, u, c, dim=dim)
+    return _clip_tangent(x, u, r, dim=dim)
 
 
-def _clip_tangent(x, u, c, dim: int = -1):
+def _clip_tangent(x, u, r, dim: int = -1):
     # get the almost infinite vecotor estimate
     # this is the norm of travel vector to the opposite pole
     s = x.size(dim)
-    p = torch.ones((s,), dtype=x.dtype, device=x.device)
-    p = p / s ** 0.5 / (c ** 0.5)
-    p = _project(p, c, dim=dim)
+    p = torch.full((s,), 1 / s ** 0.5, dtype=x.dtype, device=x.device)
+    p = p * _max_norm(x) * r
     # normalize its length based on x
-    maxnorm = _dist(p, -p, c, keepdim=True, dim=dim) / _lambda_x(
-        x, c, keepdim=True, dim=dim
+    maxnorm = _dist(p, -p, r, keepdim=True, dim=dim) / _lambda_x(
+        x, r, keepdim=True, dim=dim
     )
     norm = u.norm(dim=dim, keepdim=True, p=2)
     cond = norm > maxnorm
