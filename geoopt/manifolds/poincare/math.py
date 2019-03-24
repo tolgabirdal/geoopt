@@ -1138,14 +1138,14 @@ def dist2plane(x, p, a, *, r=1.0, keepdim=False, signed=False, dim=-1):
 
 
 def _dist2plane(x, a, p, r, keepdim: bool = False, signed: bool = False, dim: int = -1):
-    diff = _mobius_add(-p, x, r, dim=dim)
-    diff_norm2 = diff.pow(2).sum(dim=dim, keepdim=keepdim)
-    sc_diff_a = (diff * a).sum(dim=dim, keepdim=keepdim)
+    rdiff = _mobius_add(-p/r, x/r, 1, dim=dim)
+    rdiff_norm2 = rdiff.pow(2).sum(dim=dim, keepdim=keepdim)
+    sc_rdiff_a = (rdiff * a).sum(dim=dim, keepdim=keepdim)
     if not signed:
-        sc_diff_a = sc_diff_a.abs()
+        sc_rdiff_a = sc_rdiff_a.abs()
     a_norm = a.norm(dim=dim, keepdim=keepdim, p=2)
-    num = 2 * sc_diff_a / r
-    denom = (1 - diff_norm2 / r ** 2) * a_norm
+    num = 2 * sc_rdiff_a
+    denom = (1 - rdiff_norm2) * a_norm
     return r * arsinh(num / (denom + 1e-15))
 
 
