@@ -295,30 +295,30 @@ def _mobius_sub(x, y, r, dim: int = -1):
     return _mobius_add(x, -y, r, dim=dim)
 
 
-def mobius_coadd(x, y, *, c=1.0, dim=-1):
+def mobius_coadd(x, y, *, r=1.0, dim=-1):
     r"""
     Mobius coaddition operation
 
-    Addition operation :math:`\oplus_c` is neither associative, nor commutative. Coaddition, or cooperation in
+    Addition operation :math:`\oplus_r` is neither associative, nor commutative. Coaddition, or cooperation in
     Gyrogroup is an associative operation that is defined as follows.
 
     .. math::
 
-        a \boxplus_c b = b \boxplus_c a = a\operatorname{gyr}[a, -b]b\\
+        a \boxplus_r b = b \boxplus_r a = a\operatorname{gyr}[a, -b]b\\
         = \frac{
-            (1 + c \|y\|^2_2) x + (1 - c \|x\|_2^2) y
+            (1 + \tfrac{1}{r^2} \|y\|^2_2) x + (1 - \tfrac{1}{r^2} \|x\|_2^2) y
             }{
-            1 + c^2 \|x\|^2_2 \|y\|^2_2
+            1 + \tfrac{1}{r^4} \|x\|^2_2 \|y\|^2_2
         },
 
-    where :math:`\operatorname{gyr}[a, b]c = \ominus (a \oplus b) \oplus (a \oplus (b \oplus c))`
+    where :math:`\operatorname{gyr}[a, b]c = \ominus_r (a \oplus b) \oplus_r (a \oplus_r (b \oplus_r c))`
 
     The following right cancellation property holds
 
     .. math::
 
-        (a \boxplus_c b) \ominus_c b = a\\
-        (a \oplus_c b) \boxminus b = a
+        (a \boxplus_r b) \ominus_r b = a\\
+        (a \oplus_r b) \boxminus_r b = a
 
     Parameters
     ----------
@@ -326,8 +326,8 @@ def mobius_coadd(x, y, *, c=1.0, dim=-1):
         point on Poincare ball
     y : tensor
         point on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -337,26 +337,26 @@ def mobius_coadd(x, y, *, c=1.0, dim=-1):
         the result of mobius coaddition
 
     """
-    return _mobius_coadd(x, y, c, dim=dim)
+    return _mobius_coadd(x, y, r, dim=dim)
 
 
-def _mobius_coadd(x, y, c, dim: int = -1):
+def _mobius_coadd(x, y, r, dim: int = -1):
     y = y + 1e-15
-    x2 = x.pow(2).sum(dim=dim, keepdim=True)
-    y2 = y.pow(2).sum(dim=dim, keepdim=True)
-    num = (1 - c * y2) * x + (1 - c * x2) * y
-    denom = 1 - c ** 2 * x2 * y2
+    x2 = (x / r).pow(2).sum(dim=dim, keepdim=True)
+    y2 = (y / r).pow(2).sum(dim=dim, keepdim=True)
+    num = (1 - y2) * x + (1 - x2) * y
+    denom = 1 - x2 * y2
     # avoid division by zero in this way
     return num / (denom + 1e-15)
 
 
-def mobius_cosub(x, y, *, c=1.0, dim=-1):
+def mobius_cosub(x, y, *, r=1.0, dim=-1):
     """
     Mobius cosubstraction operation
 
     .. math::
 
-        a \boxminus_c b = a \boxplus_c -b
+        a \boxminus_r b = a \boxplus_r -b
 
     Parameters
     ----------
@@ -364,8 +364,8 @@ def mobius_cosub(x, y, *, c=1.0, dim=-1):
         point on Poincare ball
     y : tensor
         point on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -375,11 +375,11 @@ def mobius_cosub(x, y, *, c=1.0, dim=-1):
         the result of mobius coaddition
 
     """
-    return _mobius_cosub(x, y, c, dim=dim)
+    return _mobius_cosub(x, y, r, dim=dim)
 
 
-def _mobius_cosub(x, y, c, dim: int = -1):
-    return _mobius_coadd(x, -y, c, dim=dim)
+def _mobius_cosub(x, y, r, dim: int = -1):
+    return _mobius_coadd(x, -y, r, dim=dim)
 
 
 def mobius_scalar_mul(r, x, *, c=1.0, dim=-1):

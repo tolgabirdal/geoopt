@@ -87,6 +87,8 @@ As mentioned above, hyperbolic space forms a Gyrogroup equipped with
 Using this math, it is possible to define another useful operations
 
 .. autofunction:: geoopt.manifolds.poincare.math.mobius_sub
+.. autofunction:: geoopt.manifolds.poincare.math.mobius_coadd
+.. autofunction:: geoopt.manifolds.poincare.math.mobius_cosub
 .. autofunction:: geoopt.manifolds.poincare.math.mobius_scalar_mul
 .. autofunction:: geoopt.manifolds.poincare.math.mobius_pointwise_mul
 .. autofunction:: geoopt.manifolds.poincare.math.mobius_matvec
