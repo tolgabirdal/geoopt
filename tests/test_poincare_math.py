@@ -73,9 +73,9 @@ def test_mobius_addition_left_cancelation(a, b, r):
     np.testing.assert_allclose(res, b, **tolerance[r.dtype])
 
 
-def test_mobius_addition_zero_a(b, c):
-    a = torch.zeros(100, 10, dtype=c.dtype)
-    res = poincare.math.mobius_add(a, b, c=c)
+def test_mobius_addition_zero_a(b, r):
+    a = torch.zeros(100, 10, dtype=r.dtype)
+    res = poincare.math.mobius_add(a, b, r=r)
     np.testing.assert_allclose(res, b)
 
 
