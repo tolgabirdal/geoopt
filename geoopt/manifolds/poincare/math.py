@@ -821,14 +821,14 @@ def _logmap0(y, r, dim: int = -1):
     return y / y_norm_div_r * artanh(y_norm_div_r)
 
 
-def mobius_matvec(m, x, *, c=1.0, dim=-1):
+def mobius_matvec(m, x, *, r=1.0, dim=-1):
     r"""
     Generalization for matrix-vector multiplication to hyperbolic space defined as
 
     .. math::
 
-        M \otimes_c x = (1/\sqrt{c}) \tanh\left(
-            \frac{\|Mx\|_2}{\|x\|_2}\tanh^{-1}(\sqrt{c}\|x\|_2)
+        M \otimes_r x = r \tanh\left(
+            \frac{\|Mx\|_2}{\|x\|_2}\tanh^{-1}(\|x\|_2/r)
         \right)\frac{Mx}{\|Mx\|_2}
 
     .. plot:: plots/extended/poincare/mobius_matvec.py
@@ -840,8 +840,8 @@ def mobius_matvec(m, x, *, c=1.0, dim=-1):
         Batched matmul is performed if ``m.dim() > 2``, but only last dim reduction is supported
     x : tensor
         point on Poincare ball
-    c : float|tensor
-        negative ball curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -850,37 +850,36 @@ def mobius_matvec(m, x, *, c=1.0, dim=-1):
     tensor
         Mobius matvec result
     """
-    return _mobius_matvec(m, x, c, dim=dim)
+    return _mobius_matvec(m, x, r, dim=dim)
 
 
-def _mobius_matvec(m, x, c, dim: int = -1):
+def _mobius_matvec(m, x, r, dim: int = -1):
     if m.dim() > 2 and dim != -1:
         raise RuntimeError(
             "broadcasted Mobius matvec is supported for the last dim only"
         )
     x = x + 1e-15
     x_norm = x.norm(dim=dim, keepdim=True, p=2)
-    sqrt_c = c ** 0.5
     if dim != -1 or m.dim() == 2:
         mx = torch.tensordot(x, m, dims=([dim], [1]))
     else:
         mx = torch.matmul(m, x.unsqueeze(-1)).squeeze(-1)
     mx_norm = mx.norm(dim=dim, keepdim=True, p=2)
-    res_c = tanh(mx_norm / x_norm * artanh(sqrt_c * x_norm)) * mx / (mx_norm * sqrt_c)
+    res_c = tanh(mx_norm / x_norm * artanh(x_norm / r)) * r * mx / mx_norm
     cond = (mx == 0).prod(dim=dim, keepdim=True, dtype=torch.uint8)
     res_0 = torch.zeros(1, dtype=res_c.dtype, device=res_c.device)
     res = torch.where(cond, res_0, res_c)
     return res
 
 
-def mobius_pointwise_mul(w, x, *, c=1.0, dim=-1):
+def mobius_pointwise_mul(w, x, *, r=1.0, dim=-1):
     r"""
     Generalization for point-wise multiplication to hyperbolic space defined as
 
     .. math::
 
-        \operatorname{diag}(w) \otimes_c x = (1/\sqrt{c}) \tanh\left(
-            \frac{\|\operatorname{diag}(w)x\|_2}{x}\tanh^{-1}(\sqrt{c}\|x\|_2)
+        \operatorname{diag}(w) \otimes_r x = r \tanh\left(
+            \frac{\|\operatorname{diag}(w)x\|_2}{x}\tanh^{-1}(\|x\|_2/r)
         \right)\frac{\|\operatorname{diag}(w)x\|_2}{\|x\|_2}
 
 
@@ -890,8 +889,8 @@ def mobius_pointwise_mul(w, x, *, c=1.0, dim=-1):
         weights for multiplication (should be broadcastable to x)
     x : tensor
         point on Poincare ball
-    c : float|tensor
-        negative ball curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -900,17 +899,17 @@ def mobius_pointwise_mul(w, x, *, c=1.0, dim=-1):
     tensor
         Mobius point-wise mul result
     """
-    return _mobius_pointwise_mul(w, x, c, dim=dim)
+    return _mobius_pointwise_mul(w, x, r, dim=dim)
 
 
-def _mobius_pointwise_mul(w, x, c, dim: int = -1):
+def _mobius_pointwise_mul(w, x, r, dim: int = -1):
     x = x + 1e-15
     x_norm = x.norm(dim=dim, keepdim=True, p=2)
-    sqrt_c = c ** 0.5
     wx = w * x
     wx_norm = wx.norm(dim=dim, keepdim=True, p=2)
-    res_c = tanh(wx_norm / x_norm * artanh(sqrt_c * x_norm)) * wx / (wx_norm * sqrt_c)
-    cond = (wx == 0).prod(dim=dim, keepdim=True, dtype=torch.uint8)
+    res_c = tanh(wx_norm / x_norm * artanh(x_norm / r)) * r * wx / wx_norm
+    cond = torch.isclose(wx, torch.zeros((1,), dtype=wx.dtype, device=wx.device))
+    cond = cond.prod(dim=dim, keepdim=True, dtype=torch.uint8)
     res_0 = torch.zeros(1, dtype=res_c.dtype, device=res_c.device)
     res = torch.where(cond, res_0, res_c)
     return res
