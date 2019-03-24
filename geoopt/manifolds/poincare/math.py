@@ -1024,7 +1024,7 @@ def mobiusify(fn):
     return mobius_fn
 
 
-def dist2plane(x, p, a, *, c=1.0, keepdim=False, signed=False, dim=-1):
+def dist2plane(x, p, a, *, r=1.0, keepdim=False, signed=False, dim=-1):
     r"""
     Distance from :math:`x` to a hyperbolic hyperplane in Poincare ball
     that is orthogonal to :math:`a` and contains :math:`p`.
@@ -1061,29 +1061,29 @@ def dist2plane(x, p, a, *, c=1.0, keepdim=False, signed=False, dim=-1):
         = p + \{a\}^\perp
 
     Naturally we have a set :math:`\{a\}^\perp` with applied :math:`+` operator to each element.
-    Generalizing a notion of summation to the hyperbolic space we replace :math:`+` with :math:`\oplus_c`.
+    Generalizing a notion of summation to the hyperbolic space we replace :math:`+` with :math:`\oplus_r`.
 
     Next, we should figure out what is :math:`\{a\}^\perp` in the Poincare ball.
 
     First thing that we should acknowledge is that notion of orthogonality is defined for vectors in tangent spaces.
-    Let's consider now :math:`p\in \mathbb{D}_c^n` and :math:`a\in T_p\mathbb{D}_c^n\backslash \{\mathbf{0}\}`.
+    Let's consider now :math:`p\in \mathbb{B}_r^n` and :math:`a\in T_p\mathbb{B}_r^n\backslash \{\mathbf{0}\}`.
 
     Slightly deviating from traditional notation let's write :math:`\{a\}_p^\perp`
-    highlighting the tight relationship of :math:`a\in T_p\mathbb{D}_c^n\backslash \{\mathbf{0}\}`
-    with :math:`p \in \mathbb{D}_c^n`. We then define
+    highlighting the tight relationship of :math:`a\in T_p\mathbb{B}_r^n\backslash \{\mathbf{0}\}`
+    with :math:`p \in \mathbb{B}_r^n`. We then define
 
     .. math::
 
         \{a\}_p^\perp := \left\{
-            z\in T_p\mathbb{D}_c^n \;:\; \langle z, a\rangle_p = 0
+            z\in T_p\mathbb{B}_r^n \;:\; \langle z, a\rangle_p = 0
         \right\}
 
-    Recalling that a tangent vector :math:`z` for point :math:`p` yields :math:`x = \operatorname{Exp}^c_p(z)`
+    Recalling that a tangent vector :math:`z` for point :math:`p` yields :math:`x = \operatorname{Exp}^r_p(z)`
     we rewrite the above equation as
 
     .. math::
         \{a\}_p^\perp := \left\{
-            x\in \mathbb{D}_c^n \;:\; \langle \operatorname{Log}_p^c(x), a\rangle_p = 0
+            x\in \mathbb{B}_r^n \;:\; \langle \operatorname{Log}_p^r(x), a\rangle_p = 0
         \right\}
 
     This formulation is something more pleasant to work with.
@@ -1091,24 +1091,24 @@ def dist2plane(x, p, a, *, c=1.0, keepdim=False, signed=False, dim=-1):
 
     .. math::
 
-        \tilde{H}_{a, p}^c = p + \{a\}^\perp_p\\
+        \tilde{H}_{a, p}^r = p + \{a\}^\perp_p\\
         = \left\{
-            x \in \mathbb{D}_c^n\;:\;\langle\operatorname{Log}^c_p(x), a\rangle_p = 0
+            x \in \mathbb{B}_r^n\;:\;\langle\operatorname{Log}^r_p(x), a\rangle_p = 0
         \right\} \\
         = \left\{
-            x \in \mathbb{D}_c^n\;:\;\langle -p \oplus_c x, a\rangle = 0
+            x \in \mathbb{B}_r^n\;:\;\langle -p \oplus_r x, a\rangle = 0
         \right\}
 
-    To compute the distance :math:`d_c(x, \tilde{H}_{a, p}^c)` we find
+    To compute the distance :math:`d_r(x, \tilde{H}_{a, p}^r)` we find
 
     .. math::
 
-        d_c(x, \tilde{H}_{a, p}^c) = \inf_{w\in \tilde{H}_{a, p}^c} d_c(x, w)\\
-        = \frac{1}{\sqrt{c}} \sinh^{-1}\left\{
+        d_r(x, \tilde{H}_{a, p}^r) = \inf_{w\in \tilde{H}_{a, p}^r} d_r(x, w)\\
+        = r \sinh^{-1}\left\{
             \frac{
-                2\sqrt{c} |\langle(-p)\oplus_c x, a\rangle|
+                2/r|\langle(-p)\oplus_r x, a\rangle|
                 }{
-                (1-c\|(-p)\oplus_c x\|^2_2)\|a\|_2
+                (1-\|(-p)\oplus_r x\|^2_2/r^2)\|a\|_2
             }
         \right\}
 
@@ -1120,8 +1120,8 @@ def dist2plane(x, p, a, *, c=1.0, keepdim=False, signed=False, dim=-1):
         vector on tangent space of :math:`p`
     p : tensor
         point on Poincare ball lying on the hyperplane
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     keepdim : bool
         retain the last dim? (default: false)
     signed : bool
@@ -1134,20 +1134,19 @@ def dist2plane(x, p, a, *, c=1.0, keepdim=False, signed=False, dim=-1):
     tensor
         distance to the hyperplane
     """
-    return _dist2plane(x, a, p, c, keepdim=keepdim, signed=signed, dim=dim)
+    return _dist2plane(x, a, p, r, keepdim=keepdim, signed=signed, dim=dim)
 
 
-def _dist2plane(x, a, p, c, keepdim: bool = False, signed: bool = False, dim: int = -1):
-    sqrt_c = c ** 0.5
-    diff = _mobius_add(-p, x, c, dim=dim)
+def _dist2plane(x, a, p, r, keepdim: bool = False, signed: bool = False, dim: int = -1):
+    diff = _mobius_add(-p, x, r, dim=dim)
     diff_norm2 = diff.pow(2).sum(dim=dim, keepdim=keepdim)
     sc_diff_a = (diff * a).sum(dim=dim, keepdim=keepdim)
     if not signed:
         sc_diff_a = sc_diff_a.abs()
     a_norm = a.norm(dim=dim, keepdim=keepdim, p=2)
-    num = 2 * sqrt_c * sc_diff_a
-    denom = (1 - c * diff_norm2) * a_norm
-    return arsinh(num / (denom + 1e-15)) / sqrt_c
+    num = 2 * sc_diff_a / r
+    denom = (1 - diff_norm2 / r ** 2) * a_norm
+    return r * arsinh(num / (denom + 1e-15))
 
 
 def gyration(a, b, u, *, c=1.0, dim=-1):
