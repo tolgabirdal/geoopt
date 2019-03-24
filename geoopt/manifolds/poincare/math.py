@@ -556,7 +556,7 @@ def _clip_tangent(x, u, r, dim: int = -1):
     return torch.where(cond, projected, u)
 
 
-def geodesic(t, x, y, *, c=1.0, dim=-1):
+def geodesic(t, x, y, *, r=1.0, dim=-1):
     r"""
     Geodesic (the shortest) path connecting :math:`x` and :math:`y`.
     The path can be treated as and extension of a line segment between
@@ -565,7 +565,7 @@ def geodesic(t, x, y, *, c=1.0, dim=-1):
 
     .. math::
 
-        \gamma_{x\to y}(t) = x \oplus_c r \otimes_c ((-x) \oplus_c y)
+        \gamma_{x\to y}(t) = x \oplus_r r \otimes_r ((-x) \oplus_r y)
 
     The required properties of this path are the following:
 
@@ -588,7 +588,7 @@ def geodesic(t, x, y, *, c=1.0, dim=-1):
 
     .. math::
 
-        v = d_c(\gamma_{x\to y}(0), \gamma_{x\to y}(1)) = d_c(x, y)
+        v = d_r(\gamma_{x\to y}(0), \gamma_{x\to y}(1)) = d_r(x, y)
 
 
     Parameters
@@ -599,8 +599,8 @@ def geodesic(t, x, y, *, c=1.0, dim=-1):
         starting point on Poincare ball
     y : tensor
         target point on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -609,14 +609,14 @@ def geodesic(t, x, y, *, c=1.0, dim=-1):
     tensor
         point on the Poincare ball
     """
-    return _geodesic(t, x, y, c, dim=dim)
+    return _geodesic(t, x, y, r, dim=dim)
 
 
-def _geodesic(t, x, y, c, dim: int = -1):
+def _geodesic(t, x, y, r, dim: int = -1):
     # this is not very numerically unstable
-    v = _mobius_add(-x, y, c, dim=dim)
-    tv = _mobius_scalar_mul(t, v, c, dim=dim)
-    gamma_t = _mobius_add(x, tv, c, dim=dim)
+    v = _mobius_add(-x, y, r, dim=dim)
+    tv = _mobius_scalar_mul(t, v, r, dim=dim)
+    gamma_t = _mobius_add(x, tv, r, dim=dim)
     return gamma_t
 
 
