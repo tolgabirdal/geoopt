@@ -620,7 +620,7 @@ def _geodesic(t, x, y, r, dim: int = -1):
     return gamma_t
 
 
-def expmap(x, u, *, c=1.0, dim=-1):
+def expmap(x, u, *, r=1.0, dim=-1):
     r"""
     Exponential map for Poincare ball model. This is tightly related with :func:`geodesic`.
     Intuitively Exponential map is a smooth constant travelling from starting point :math:`x` with speed :math:`u`.
@@ -638,8 +638,8 @@ def expmap(x, u, *, c=1.0, dim=-1):
 
     .. math::
 
-        \operatorname{Exp}^c_x(u) = \gamma_{x, u}(1) = \\
-        x\oplus_c \tanh(\sqrt{c}/2 \|u\|_x) \frac{u}{\sqrt{c}\|u\|_2}
+        \operatorname{Exp}^r_x(u) = \gamma_{x, u}(1) = \\
+        x\oplus_r \tanh(\|u\|_x/(2r)) \frac{u}{\|u\|_2/r}
 
     Parameters
     ----------
@@ -647,8 +647,8 @@ def expmap(x, u, *, c=1.0, dim=-1):
         starting point on Poincare ball
     u : tensor
         speed vector on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -657,36 +657,35 @@ def expmap(x, u, *, c=1.0, dim=-1):
     tensor
         :math:`\gamma_{x, u}(1)` end point
     """
-    return _expmap(x, u, c, dim=dim)
+    return _expmap(x, u, r, dim=dim)
 
 
-def _expmap(x, u, c, dim: int = -1):
+def _expmap(x, u, r, dim: int = -1):
     u += 1e-15
-    sqrt_c = c ** 0.5
     u_norm = u.norm(dim=dim, p=2, keepdim=True)
     second_term = (
-        tanh(sqrt_c / 2 * _lambda_x(x, c, keepdim=True, dim=dim) * u_norm)
+        tanh(_lambda_x(x, r, keepdim=True, dim=dim) * u_norm / 2 / r)
         * u
-        / (sqrt_c * u_norm)
+        / (u_norm / r)
     )
-    gamma_1 = _mobius_add(x, second_term, c, dim=dim)
+    gamma_1 = _mobius_add(x, second_term, r, dim=dim)
     return gamma_1
 
 
-def expmap0(u, *, c=1.0, dim=-1):
+def expmap0(u, *, r=1.0, dim=-1):
     r"""
     Exponential map for Poincare ball model from :math:`0`.
 
     .. math::
 
-        \operatorname{Exp}^c_0(u) = \tanh(\sqrt{c}/2 \|u\|_2) \frac{u}{\sqrt{c}\|u\|_2}
+        \operatorname{Exp}^r_0(u) = \tanh(\|u\|_2/(2r)) \frac{u}{\|u\|_2/r}
 
     Parameters
     ----------
     u : tensor
         speed vector on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -695,14 +694,13 @@ def expmap0(u, *, c=1.0, dim=-1):
     tensor
         :math:`\gamma_{0, u}(1)` end point
     """
-    return _expmap0(u, c, dim=dim)
+    return _expmap0(u, r, dim=dim)
 
 
-def _expmap0(u, c, dim: int = -1):
+def _expmap0(u, r, dim: int = -1):
     u = u + 1e-15
-    sqrt_c = c ** 0.5
     u_norm = u.norm(dim=dim, p=2, keepdim=True)
-    gamma_1 = tanh(sqrt_c * u_norm) * u / (sqrt_c * u_norm)
+    gamma_1 = r * tanh(u_norm / r) * u / u_norm
     return gamma_1
 
 
