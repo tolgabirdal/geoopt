@@ -85,13 +85,13 @@ def test_mobius_addition_zero_b(a, r):
     np.testing.assert_allclose(res, a)
 
 
-def test_mobius_addition_negative_cancellation(a, c):
-    res = poincare.math.mobius_add(a, -a, c=c)
+def test_mobius_addition_negative_cancellation(a, r):
+    res = poincare.math.mobius_add(a, -a, r=r)
     tolerance = {
         torch.float32: dict(atol=1e-7, rtol=1e-6),
         torch.float64: dict(atol=1e-10),
     }
-    np.testing.assert_allclose(res, torch.zeros_like(res), **tolerance[c.dtype])
+    np.testing.assert_allclose(res, torch.zeros_like(res), **tolerance[r.dtype])
 
 
 def test_mobius_negative_addition(a, b, c):
