@@ -448,7 +448,7 @@ def dist(x, y, *, r=1.0, keepdim=False, dim=-1):
 
     .. math::
 
-        d_c(x, y) = 2r\tanh^{-1}(\|(-x)\oplus_c y\|_2/r)
+        d_r(x, y) = 2r\tanh^{-1}(\|(-x)\oplus_c y\|_2/r)
 
     .. plot:: plots/extended/poincare/distance.py
 
@@ -483,6 +483,10 @@ def _dist(x, y, r, keepdim: bool = False, dim: int = -1):
 def dist0(x, *, r=1.0, keepdim=False, dim=-1):
     r"""
     Distance on the Poincare ball to zero
+
+    .. math::
+
+        d_r(x, \mathbf{0}) = 2r\tanh^{-1}(\|x\|_2/r)
 
     Parameters
     ----------
