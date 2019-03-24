@@ -310,7 +310,7 @@ def mobius_coadd(x, y, *, r=1.0, dim=-1):
             1 + \tfrac{1}{r^4} \|x\|^2_2 \|y\|^2_2
         },
 
-    where :math:`\operatorname{gyr}[a, b]c = \ominus_r (a \oplus b) \oplus_r (a \oplus_r (b \oplus_r c))`
+    where :math:`\operatorname{gyr}[a, b]c = \ominus (a \oplus_r b) \oplus_r (a \oplus_r (b \oplus_r c))`
 
     The following right cancellation property holds
 
