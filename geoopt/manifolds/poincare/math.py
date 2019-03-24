@@ -351,7 +351,7 @@ def _mobius_coadd(x, y, r, dim: int = -1):
 
 
 def mobius_cosub(x, y, *, r=1.0, dim=-1):
-    """
+    r"""
     Mobius cosubstraction operation
 
     .. math::
@@ -382,13 +382,13 @@ def _mobius_cosub(x, y, r, dim: int = -1):
     return _mobius_coadd(x, -y, r, dim=dim)
 
 
-def mobius_scalar_mul(r, x, *, c=1.0, dim=-1):
+def mobius_scalar_mul(a, x, *, r=1.0, dim=-1):
     r"""
     Left scalar multiplication on the Poincare ball
 
     .. math::
 
-        r \otimes_c x = (1/\sqrt{c}) \tanh(r\tanh^{-1}(\sqrt{c}\|x\|_2))\frac{x}{\|x\|_2}
+        a \otimes_r x = r \tanh\left(a\tanh^{-1}\left(\|x\|_2/r\right)\right)\frac{x}{\|x\|_2}
 
     This operation has properties similar to Euclidean
 
@@ -396,34 +396,34 @@ def mobius_scalar_mul(r, x, *, c=1.0, dim=-1):
 
     .. math::
 
-         r \otimes_c x = x \oplus_c \dots \oplus_c x
+         a \otimes_r x = \underbrace{x \oplus_r \dots \oplus_r x}_{\times a}
 
     * Distributive property
 
     .. math::
 
-         (r_1 + r_2) \otimes_c x = r_1 \otimes_c x \oplus r_2 \otimes_c x
+         (a_1 + a_2) \otimes_r x = a_1 \otimes_r x \oplus_r a_2 \otimes_r x
 
     * Scalar associativity
 
     .. math::
 
-         (r_1 r_2) \otimes_c x = r_1 \otimes_c (r_2 \otimes_c x)
+         (a_1 a_2) \otimes_r x = a_1 \otimes_r (a_2 \otimes_r x)
 
     * Scaling property
 
     .. math::
 
-        |r| \otimes_c x / \|r \otimes_c x\|_2 = x/\|x\|_2
+        |a| \otimes_r x / \|a \otimes_r x\|_2 = x/\|x\|_2
 
     Parameters
     ----------
-    r : float|tensor
+    a : float|tensor
         scalar for multiplication
     x : tensor
         point on Poincare ball
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -432,14 +432,13 @@ def mobius_scalar_mul(r, x, *, c=1.0, dim=-1):
     tensor
         the result of mobius scalar multiplication
     """
-    return _mobius_scalar_mul(r, x, c, dim=dim)
+    return _mobius_scalar_mul(a, x, r, dim=dim)
 
 
-def _mobius_scalar_mul(r, x, c, dim: int = -1):
+def _mobius_scalar_mul(a, x, r, dim: int = -1):
     x = x + 1e-15
     x_norm = x.norm(dim=dim, keepdim=True, p=2)
-    sqrt_c = c ** 0.5
-    res_c = tanh(r * artanh(sqrt_c * x_norm)) * x / (x_norm * sqrt_c)
+    res_c = tanh(a * artanh(x_norm / r)) * x / (x_norm / r)
     return res_c
 
 
