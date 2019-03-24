@@ -182,15 +182,15 @@ def test_scaling_property(a, r, d1):
     np.testing.assert_allclose(x1, x2, **tolerance[r.dtype])
 
 
-def test_geodesic_borders(a, b, c):
-    geo0 = poincare.math.geodesic(0.0, a, b, c=c)
-    geo1 = poincare.math.geodesic(1.0, a, b, c=c)
+def test_geodesic_borders(a, b, r):
+    geo0 = poincare.math.geodesic(0.0, a, b, r=r)
+    geo1 = poincare.math.geodesic(1.0, a, b, r=r)
     tolerance = {
         torch.float32: dict(rtol=1e-5, atol=1e-6),
         torch.float64: dict(atol=1e-10),
     }
-    np.testing.assert_allclose(geo0, a, **tolerance[c.dtype])
-    np.testing.assert_allclose(geo1, b, **tolerance[c.dtype])
+    np.testing.assert_allclose(geo0, a, **tolerance[r.dtype])
+    np.testing.assert_allclose(geo1, b, **tolerance[r.dtype])
 
 
 def test_geodesic_segment_length_property(a, b, c):
