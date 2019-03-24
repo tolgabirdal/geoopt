@@ -915,28 +915,28 @@ def _mobius_pointwise_mul(w, x, r, dim: int = -1):
     return res
 
 
-def mobius_fn_apply_chain(x, *fns, c=1.0, dim=-1):
+def mobius_fn_apply_chain(x, *fns, r=1.0, dim=-1):
     r"""
     Generalization for functions in hyperbolic space.
     First, hyperbolic vector is mapped to a Euclidean space via
-    :math:`\operatorname{Log}^c_0` and nonlinear function is applied in this tangent space.
-    The resulting vector is then mapped back with :math:`\operatorname{Exp}^c_0`
+    :math:`\operatorname{Log}^r_0` and nonlinear function is applied in this tangent space.
+    The resulting vector is then mapped back with :math:`\operatorname{Exp}^r_0`
 
     .. math::
 
-        f^{\otimes_c}(x) = \operatorname{Exp}^c_0(f(\operatorname{Log}^c_0(y)))
+        f^{\otimes_r}(x) = \operatorname{Exp}^r_0(f(\operatorname{Log}^r_0(y)))
 
     The definition of mobius function application allows chaining as
 
     .. math::
 
-        y = \operatorname{Exp}^c_0(\operatorname{Log}^c_0(y))
+        y = \operatorname{Exp}^r_0(\operatorname{Log}^r_0(y))
 
     Resulting in
 
     .. math::
 
-        (f \circ g)^{\otimes_c}(x) = \operatorname{Exp}^c_0((f \circ g) (\operatorname{Log}^c_0(y)))
+        (f \circ g)^{\otimes_r}(x) = \operatorname{Exp}^r_0((f \circ g) (\operatorname{Log}^r_0(y)))
 
     Parameters
     ----------
@@ -944,8 +944,8 @@ def mobius_fn_apply_chain(x, *fns, c=1.0, dim=-1):
         point on Poincare ball
     fns : callable[]
         functions to apply
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -957,23 +957,23 @@ def mobius_fn_apply_chain(x, *fns, c=1.0, dim=-1):
     if not fns:
         return x
     else:
-        ex = _logmap0(x, c, dim=dim)
+        ex = _logmap0(x, r, dim=dim)
         for fn in fns:
             ex = fn(ex)
-        y = _expmap0(ex, c, dim=dim)
+        y = _expmap0(ex, r, dim=dim)
         return y
 
 
-def mobius_fn_apply(fn, x, *args, c=1.0, dim=-1, **kwargs):
+def mobius_fn_apply(fn, x, *args, r=1.0, dim=-1, **kwargs):
     r"""
     Generalization for functions in hyperbolic space.
     First, hyperbolic vector is mapped to a Euclidean space via
-    :math:`\operatorname{Log}^c_0` and nonlinear function is applied in this tangent space.
-    The resulting vector is then mapped back with :math:`\operatorname{Exp}^c_0`
+    :math:`\operatorname{Log}^r_0` and nonlinear function is applied in this tangent space.
+    The resulting vector is then mapped back with :math:`\operatorname{Exp}^r_0`
 
     .. math::
 
-        f^{\otimes_c}(x) = \operatorname{Exp}^c_0(f(\operatorname{Log}^c_0(y)))
+        f^{\otimes_r}(x) = \operatorname{Exp}^r_0(f(\operatorname{Log}^r_0(y)))
 
     .. plot:: plots/extended/poincare/mobius_sigmoid_apply.py
 
@@ -983,8 +983,8 @@ def mobius_fn_apply(fn, x, *args, c=1.0, dim=-1, **kwargs):
         point on Poincare ball
     fn : callable
         function to apply
-    c : float|tensor
-        ball negative curvature
+    r : float|tensor
+        ball's radius
     dim : int
         reduction dimension for operations
 
@@ -993,15 +993,15 @@ def mobius_fn_apply(fn, x, *args, c=1.0, dim=-1, **kwargs):
     tensor
         Result of function in hyperbolic space
     """
-    ex = _logmap0(x, c, dim=dim)
+    ex = _logmap0(x, r, dim=dim)
     ex = fn(ex, *args, **kwargs)
-    y = _expmap0(ex, c, dim=dim)
+    y = _expmap0(ex, r, dim=dim)
     return y
 
 
 def mobiusify(fn):
     r"""
-    Wraps a function so that is works in hyperbolic space. New function will accept additional argument ``c``
+    Wraps a function so that is works in hyperbolic space. New function will accept additional argument ``r``
 
     Parameters
     ----------
@@ -1015,10 +1015,10 @@ def mobiusify(fn):
     """
 
     @functools.wraps(fn)
-    def mobius_fn(x, *args, c=1.0, dim=-1, **kwargs):
-        ex = _logmap0(x, c, dim=dim)
+    def mobius_fn(x, *args, r=1.0, dim=-1, **kwargs):
+        ex = _logmap0(x, r, dim=dim)
         ex = fn(ex, *args, **kwargs)
-        y = _expmap0(ex, c, dim=dim)
+        y = _expmap0(ex, r, dim=dim)
         return y
 
     return mobius_fn
