@@ -105,16 +105,16 @@ def test_mobius_negative_addition(a, b, r):
 
 
 @pytest.mark.parametrize("n", list(range(5)))
-def test_n_additions_via_scalar_multiplication(n, a, c):
+def test_n_additions_via_scalar_multiplication(n, a, r):
     y = torch.zeros_like(a)
     for _ in range(n):
-        y = poincare.math.mobius_add(a, y, c=c)
-    ny = poincare.math.mobius_scalar_mul(n, a, c=c)
+        y = poincare.math.mobius_add(a, y, r=r)
+    ny = poincare.math.mobius_scalar_mul(n, a, r=r)
     tolerance = {
         torch.float32: dict(atol=1e-7, rtol=1e-6),
         torch.float64: dict(atol=1e-10),
     }
-    np.testing.assert_allclose(y, ny, **tolerance[c.dtype])
+    np.testing.assert_allclose(y, ny, **tolerance[r.dtype])
 
 
 @pytest.fixture
