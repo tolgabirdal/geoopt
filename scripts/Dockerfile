@@ -12,7 +12,7 @@ COPY $SRC_DIR/requirements-dev.txt /opt/geoopt/requirements-dev.txt
 # install most of the things using conda
 # start with python version and numpy with mkl support, then the rest
 RUN conda update -n base -c defaults conda && \
-    conda install --yes python=${PYTHON_VERSION} pip numpy mkl-service && \
+    conda install --yes python=${PYTHON_VERSION} pip numpy mkl-service gcc && \
     conda install --yes ${PYTORCH} -c pytorch && \
     pip install -r /opt/geoopt/requirements-dev.txt
 # set source dir as working dir
