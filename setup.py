@@ -1,6 +1,10 @@
 import os
 import re
-from torch.utils.cpp_extension import BuildExtension, CppExtension
+try:
+    from torch.utils.cpp_extension import BuildExtension, CppExtension
+except ImportError:
+    raise ImportError("Please install pytorch before installing geoopt since "
+                      "we rely on pytorch import during installation")
 from setuptools import setup, find_packages
 
 DESCRIPTION = """Unofficial implementation for “Riemannian Adaptive Optimization Methods” ICLR2019 and more"""
@@ -49,6 +53,7 @@ if __name__ == "__main__":
         ext_modules=[
             CppExtension('geoopt.manifolds.poincare._C', ['src/poincare.cpp']),
         ],
+        setup_requires=["torch>=1.1.0"],
         cmdclass={
             'build_ext': BuildExtension
         }
