@@ -1,5 +1,6 @@
 import os
 import re
+from torch.utils.cpp_extension import BuildExtension, CppExtension
 from setuptools import setup, find_packages
 
 DESCRIPTION = """Unofficial implementation for “Riemannian Adaptive Optimization Methods” ICLR2019 and more"""
@@ -45,4 +46,10 @@ if __name__ == "__main__":
         python_requires=">=3.6.0",
         license="Apache License, Version 2.0",
         classifiers=classifiers,
+        ext_modules=[
+            CppExtension('geoopt.manifolds.poincare._C', ['src/poincare.cpp']),
+        ],
+        cmdclass={
+            'build_ext': BuildExtension
+        }
     )

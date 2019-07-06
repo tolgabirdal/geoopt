@@ -8,6 +8,7 @@ a well written paper by Octavian-Eugen Ganea (2018) [1]_
 
 import functools
 import torch.jit
+import geoopt.manifolds.poincare._C
 
 
 MIN_NORM = 1e-15
@@ -112,11 +113,7 @@ def lambda_x(x, *, c=1.0, keepdim=False, dim=-1):
     tensor
         conformal factor
     """
-    return _lambda_x(x, c, keepdim=keepdim, dim=dim)
-
-
-def _lambda_x(x, c, keepdim: bool = False, dim: int = -1):
-    return 2 / (1 - c * x.pow(2).sum(dim=dim, keepdim=keepdim)).clamp_min(MIN_NORM)
+    return geoopt.manifolds.poincare._C.lambda_x(x, c, keepdim=keepdim, dim=dim)
 
 
 def inner(x, u, v, *, c=1.0, keepdim=False, dim=-1):
@@ -151,9 +148,9 @@ def inner(x, u, v, *, c=1.0, keepdim=False, dim=-1):
 
 
 def _inner(x, u, v, c, keepdim: bool = False, dim: int = -1):
-    return _lambda_x(x, c, keepdim=True, dim=dim) ** 2 * (u * v).sum(
-        dim=dim, keepdim=keepdim
-    )
+    return geoopt.manifolds.poincare._C.lambda_x(x, c, keepdim=True, dim=dim) ** 2 * (
+        u * v
+    ).sum(dim=dim, keepdim=keepdim)
 
 
 def norm(x, u, *, c=1.0, keepdim=False, dim=-1):
@@ -186,9 +183,9 @@ def norm(x, u, *, c=1.0, keepdim=False, dim=-1):
 
 
 def _norm(x, u, c, keepdim: bool = False, dim: int = -1):
-    return _lambda_x(x, c, keepdim=keepdim, dim=dim) * u.norm(
-        dim=dim, keepdim=keepdim, p=2
-    )
+    return geoopt.manifolds.poincare._C.lambda_x(
+        x, c, keepdim=keepdim, dim=dim
+    ) * u.norm(dim=dim, keepdim=keepdim, p=2)
 
 
 def mobius_add(x, y, *, c=1.0, dim=-1):
@@ -624,7 +621,12 @@ def _expmap(x, u, c, dim: int = -1):
     sqrt_c = c ** 0.5
     u_norm = u.norm(dim=dim, p=2, keepdim=True).clamp_min(MIN_NORM)
     second_term = (
-        tanh(sqrt_c / 2 * _lambda_x(x, c, keepdim=True, dim=dim) * u_norm)
+        tanh(
+            sqrt_c
+            / 2
+            * geoopt.manifolds.poincare._C.lambda_x(x, c, keepdim=True, dim=dim)
+            * u_norm
+        )
         * u
         / (sqrt_c * u_norm)
     )
@@ -740,7 +742,7 @@ def logmap(x, y, *, c=1.0, dim=-1):
 def _logmap(x, y, c, dim: int = -1):
     sub = _mobius_add(-x, y, c, dim=dim)
     sub_norm = sub.norm(dim=dim, p=2, keepdim=True).clamp_min(MIN_NORM)
-    lam = _lambda_x(x, c, keepdim=True, dim=dim)
+    lam = geoopt.manifolds.poincare._C.lambda_x(x, c, keepdim=True, dim=dim)
     sqrt_c = c ** 0.5
     return 2 / sqrt_c / lam * artanh(sqrt_c * sub_norm) * sub / sub_norm
 
@@ -1241,8 +1243,8 @@ def parallel_transport(x, y, v, *, c=1.0, dim=-1):
 def _parallel_transport(x, y, u, c, dim: int = -1):
     return (
         _gyration(y, -x, u, c, dim=dim)
-        * _lambda_x(x, c, keepdim=True, dim=dim)
-        / _lambda_x(y, c, keepdim=True, dim=dim)
+        * geoopt.manifolds.poincare._C.lambda_x(x, c, keepdim=True, dim=dim)
+        / geoopt.manifolds.poincare._C.lambda_x(y, c, keepdim=True, dim=dim)
     )
 
 
@@ -1328,4 +1330,6 @@ def egrad2rgrad(x, grad, *, c=1.0, dim=-1):
 
 
 def _egrad2rgrad(x, grad, c, dim: int = -1):
-    return grad / _lambda_x(x, c, keepdim=True, dim=dim) ** 2
+    return (
+        grad / geoopt.manifolds.poincare._C.lambda_x(x, c, keepdim=True, dim=dim) ** 2
+    )
