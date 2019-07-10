@@ -23,6 +23,6 @@ WORKDIR /opt/geoopt
 # copy sorces from local machine
 COPY $SRC_DIR /opt/geoopt
 # install the package ignoring deps in setup.py
-RUN pip install --no-deps -e .
+RUN pip install -e .
 # local copy version is dirty, clean __pycache__ files to avoid weird errors
 RUN find -type d -name __pycache__ -exec rm -rf {} +
