@@ -19,6 +19,7 @@ fi
 
 if [[ $* == *--test* ]]; then
     echo "Testing Geoopt"
+    touch "$(pwd).coverage"
     docker run --rm -it --user $(id -u):$(id -g) --mount type=bind,source="$(pwd).coverage",target=/opt/geoopt/.coverage geoopt:latest \
         bash -c "pytest --durations=0 -v tests/ ${COVERAGE}"
         if [[ ${COVERAGE} ]]; then sed -i 's@/opt/geoopt@'${SRC_DIR}'@g' "$(pwd)/.coverage"; fi

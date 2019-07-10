@@ -20,7 +20,6 @@ RUN conda update -n base -c defaults conda && \
     pip install -r /opt/geoopt/requirements-dev.txt
 # set source dir as working dir
 WORKDIR /opt/geoopt
-RUN touch .coverage
 # copy sorces from local machine
 COPY $SRC_DIR /opt/geoopt
 # install the package ignoring deps in setup.py
