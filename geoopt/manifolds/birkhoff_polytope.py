@@ -72,7 +72,7 @@ class BirkhoffPolytope(Manifold):
 
         return True, None
 
-    def _check_point_on_manifold(self, x, *, atol=1e-5, rtol=1e-5):
+    def _check_point_on_manifold(self, x, *, atol=1e-3, rtol=1e-3):
         row_sum = x.sum(dim=-1)
         col_sum = x.sum(dim=-2)
         row_ok = torch.allclose(
@@ -91,11 +91,19 @@ class BirkhoffPolytope(Manifold):
                 ),
             )
 
-    def _check_vector_on_tangent(self, x, u, *, atol=1e-5, rtol=1e-5):
-        diff = u.transpose(-1, -2) @ x + x.transpose(-1, -2) @ u
-        ok = torch.allclose(diff, diff.new((1,)).fill_(0), atol=atol, rtol=rtol)
+    def _check_vector_on_tangent(self, x, u, *, atol=1e-3, rtol=1e-3):
+        x_shape = x.shape
+        x = x.reshape(-1, x_shape[-2], x_shape[-1])
+        batch_size, n = x.shape[0:2]
+        e = torch.ones(batch_size, n, 1)
+        diff0 = u @ e
+        diff1 = u.transpose(-1, -2) @ e
+        ok0 = torch.allclose(diff0, torch.zeros_like(diff0), atol=atol, rtol=rtol)
+        ok1 = torch.allclose(diff1, torch.zeros_like(diff1), atol=atol, rtol=rtol)
+        ok = ok0 and ok1
+
         if not ok:
-            return False, "`u^T x + x^T u !=0` with atol={}, rtol={}".format(atol, rtol)
+            return False, "`ue !=0 or u^Te != 0` with atol={}, rtol={}".format(atol, rtol)
         return True, None
 
     def projx(self, x):
@@ -111,16 +119,19 @@ class BirkhoffPolytope(Manifold):
                 break
             c = 1.0 / (cinv + self.epsilon)
             r = 1.0 / (
-                torch.matmul(x_reshaped, torch.Tensor.permute(c, 0, 2, 1))
-                + self.epsilon
+                    torch.matmul(x_reshaped, torch.Tensor.permute(c, 0, 2, 1))
+                    + self.epsilon
             )
-        return (x_reshaped * torch.matmul(r, c)).reshape(x_shape)
-        # x = x.reshape(x_shape)
-        # return x
+        proj_x = (x_reshaped * torch.matmul(r, c)).reshape(x_shape)
+        status, msg = self._check_point_on_manifold(proj_x)
+        if not status:
+            print(msg)
+        return proj_x
 
     def proju(self, x, u):
         # takes batch data
         # batch_size, n, _ = x.shape
+        # self._check_vector_on_tangent(x, u)
         x_shape = x.shape
         x = x.reshape(-1, x_shape[-2], x_shape[-1])
         batch_size, n = x.shape[0:2]
@@ -144,11 +155,14 @@ class BirkhoffPolytope(Manifold):
         zeta, _ = torch.solve(
             B.transpose(1, 2) @ (b - A[:, :, 0:1]), B.transpose(1, 2) @ B
         )
-        alpha = torch.cat([torch.ones(batch_size, 1, 1), zeta[:, 0 : n - 1]], dim=1)
-        beta = zeta[:, n - 1 : 2 * n - 1]
+        alpha = torch.cat([torch.ones(batch_size, 1, 1), zeta[:, 0: n - 1]], dim=1)
+        beta = zeta[:, n - 1: 2 * n - 1]
         rgrad = mu - (alpha @ e.transpose(1, 2) + e @ beta.transpose(1, 2)) * x
 
         rgrad = rgrad.reshape(x_shape)
+        status, msg = self._check_vector_on_tangent(x, rgrad)
+        if not status:
+            print(msg)
         return rgrad
 
     egrad2rgrad = proju
